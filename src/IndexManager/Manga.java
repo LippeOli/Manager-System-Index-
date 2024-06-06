@@ -47,9 +47,13 @@ public class Manga {
         return id + "," + titulo + "," + anoIni + "," + genero;
     }
 
-    public static Manga fromString(String mangaStr){
-        String[] parts = mangaStr.split(",");
-        return new Manga(Integer.parseInt(parts[0]), parts[1], Integer.parseInt(parts[2]), parts[3]);
+    public static Manga fromString(String linha) {
+        String[] parts = linha.split(",");
+        int id = Integer.parseInt(parts[0]);
+        String titulo = parts[1];
+        int anoIni = Integer.parseInt(parts[2]);
+        String genero = parts[3];
+        return new Manga(id, titulo, anoIni, genero);
     }
 
 
