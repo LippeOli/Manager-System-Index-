@@ -32,24 +32,44 @@ public class MangaCRUD {
         }
     }
 
-        public void addManga(int id, String titulo, int anoIni, String genero ) {
-        Manga manga = new Manga(id, titulo, anoIni, genero);
+    public boolean isbnExiste(int isbn) {
+        try (BufferedReader indexReader = new BufferedReader(new FileReader(INDEX_PRIMARIO))) {
+            String linha;
+            while ((linha = indexReader.readLine()) != null) {
+                String[] parts = linha.split(",");
+                if (Integer.parseInt(parts[0]) == isbn) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void addManga(int isbn, String titulo, int anoIni, int anoFim, String autor, String genero, String revista, String editora, int anoEdi, int quantVolAdq) {
+
+        if (isbnExiste(isbn)) {
+            System.out.println("ISBN já existe. Mangá não adicionado.");
+            return;
+        }
+
+        Manga manga = new Manga(isbn, titulo, anoIni, anoFim, autor, genero, revista, editora, anoEdi, quantVolAdq);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, true));
              BufferedWriter indexPrimWriter = new BufferedWriter(new FileWriter(INDEX_PRIMARIO, true));
              BufferedWriter indexSecWriter = new BufferedWriter(new FileWriter(INDEX_SECUNDARIO, true))) {
 
-
             long offset = new File(FILE_NAME).length();
-            int RRN = (int) (offset / manga.toString().length()); // Simplificação para RRN
+            int RRN = (int) (offset / 100); // Supondo que cada linha tem até 100 caracteres
 
             writer.write(manga.toString());
             writer.newLine();
 
-            indexPrimWriter.write(id + "," + RRN);
+            indexPrimWriter.write(isbn + "," + RRN);
             indexPrimWriter.newLine();
 
-            indexSecWriter.write(titulo + "," + id);
+            indexSecWriter.write(titulo + "," + isbn);
             indexSecWriter.newLine();
 
         } catch (IOException e) {
@@ -63,8 +83,8 @@ public class MangaCRUD {
             while ((linha = indexReader.readLine()) != null) {
                 String[] parts = linha.split(",");
                 if (parts[0].equalsIgnoreCase(titulo)) {
-                    int numeroSerie = Integer.parseInt(parts[1]);
-                    return buscarPorNumeroSerie(numeroSerie);
+                    int isbn = Integer.parseInt(parts[1]);
+                    return buscarPorISBN(isbn);
                 }
             }
         } catch (IOException e) {
@@ -73,12 +93,12 @@ public class MangaCRUD {
         return null;
     }
 
-    private Manga buscarPorNumeroSerie(int numeroSerie) {
+    public Manga buscarPorISBN(int isbn) {
         try (BufferedReader indexReader = new BufferedReader(new FileReader(INDEX_PRIMARIO))) {
             String linha;
             while ((linha = indexReader.readLine()) != null) {
                 String[] parts = linha.split(",");
-                if (Integer.parseInt(parts[0]) == numeroSerie) {
+                if (Integer.parseInt(parts[0]) == isbn) {
                     int RRN = Integer.parseInt(parts[1]);
                     return buscarPorRRN(RRN);
                 }
@@ -114,14 +134,14 @@ public class MangaCRUD {
         }
     }
 
-    public void alterarMangas(int id, String novoTitulo, int novoAnoIni, String novoGenero) {
+    public void alterarMangas(int isbnAtualizar, String novoTitulo, int novoAnoIni, int novoAnoFim, String novoAutor, String novoGenero, String novaRevista, String novaEditora, int novoAnoEdi, int novaQuantVolAdq) {
         List<Manga> mangas = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 Manga manga = Manga.fromString(linha);
-                if (manga.getId() == id) {
-                    manga = new Manga(id, novoTitulo, novoAnoIni, novoGenero);
+                if (manga.getIsbn() == isbnAtualizar) {
+                    manga = new Manga(isbnAtualizar, novoTitulo, novoAnoIni, novoAnoFim, novoAutor, novoGenero, novaRevista, novaEditora, novoAnoEdi, novaQuantVolAdq);
                 }
                 mangas.add(manga);
             }
@@ -140,10 +160,10 @@ public class MangaCRUD {
                 raf.writeBytes(mangaStr);
 
                 int RRN = (int) (offset / manga.toString().length());
-                indexPrimWriter.write(manga.getId() + "," + RRN);
+                indexPrimWriter.write(manga.getIsbn() + "," + RRN);
                 indexPrimWriter.newLine();
 
-                indexSecWriter.write(manga.getTitulo() + "," + manga.getId());
+                indexSecWriter.write(manga.getTitulo() + "," + manga.getIsbn());
                 indexSecWriter.newLine();
 
                 offset = raf.getFilePointer();
@@ -156,13 +176,13 @@ public class MangaCRUD {
         }
     }
 
-    public void excluirManga(int id) {
+    public void excluirManga(int isbn) {
         List<Manga> mangas = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 Manga manga = Manga.fromString(linha);
-                if (manga.getId() != id) {
+                if (manga.getIsbn() != isbn) {
                     mangas.add(manga);
                 }
             }
@@ -181,10 +201,10 @@ public class MangaCRUD {
                 raf.writeBytes(mangaStr);
 
                 int RRN = (int) (offset / manga.toString().length());
-                indexPrimWriter.write(manga.getId() + "," + RRN);
+                indexPrimWriter.write(manga.getIsbn() + "," + RRN);
                 indexPrimWriter.newLine();
 
-                indexSecWriter.write(manga.getTitulo() + "," + manga.getId());
+                indexSecWriter.write(manga.getTitulo() + "," + manga.getIsbn());
                 indexSecWriter.newLine();
 
                 offset = raf.getFilePointer();

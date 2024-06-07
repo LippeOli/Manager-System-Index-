@@ -21,16 +21,29 @@ public class Main {
 
             switch (opcao) {
                 case "1":
-                    System.out.print("ID: ");
-                    int id = Integer.parseInt(sc.nextLine());
+
+                    System.out.print("ISBN: ");
+                    int isbn = Integer.parseInt(sc.nextLine());
                     System.out.print("Escreva o Titulo: ");
                     String titulo = sc.nextLine();
                     System.out.print("Escreva o Ano de Inicio: ");
                     int anoIni = Integer.parseInt(sc.nextLine());
+                    System.out.print("Escreva o Ano de Fim: ");
+                    int anoFim = Integer.parseInt(sc.nextLine());
+                    System.out.print("Escreva o Autor: ");
+                    String autor = sc.nextLine();
                     System.out.print("Escreva o Genero: ");
                     String genero = sc.nextLine();
+                    System.out.print("Escreva a Revista: ");
+                    String revista = sc.nextLine();
+                    System.out.print("Escreva a Editora: ");
+                    String editora = sc.nextLine();
+                    System.out.print("Escreva o Ano da Edicao: ");
+                    int anoEdi = Integer.parseInt(sc.nextLine());
+                    System.out.print("Escreva a Quantidade de Volumes Adquiridos: ");
+                    int quantVolAdq = Integer.parseInt(sc.nextLine());
 
-                    mangaCRUD.addManga(id, titulo, anoIni, genero);
+                    mangaCRUD.addManga(isbn, titulo, anoIni, anoFim, autor, genero, revista, editora, anoEdi, quantVolAdq);
                     break;
 
                 case "2":
@@ -38,15 +51,35 @@ public class Main {
                     break;
 
                 case "3":
-                    System.out.print("ID do Manga a ser atualizado: ");
-                    int idAtualizar = Integer.parseInt(sc.nextLine());
-                    System.out.print("Novo Titulo: ");
-                    String novoTitulo = sc.nextLine();
-                    System.out.print("Novo Ano de Inicio: ");
-                    int novoAnoIni = Integer.parseInt(sc.nextLine());
-                    System.out.print("Novo Genero: ");
-                    String novoGenero = sc.nextLine();
-                    mangaCRUD.alterarMangas(idAtualizar, novoTitulo, novoAnoIni, novoGenero);
+                    System.out.print("ISBN do Manga a ser atualizado: ");
+                    int isbnAtualizar = Integer.parseInt(sc.nextLine());
+
+                    Manga mangaExistente = mangaCRUD.buscarPorISBN(isbnAtualizar);
+
+                    if(mangaExistente != null) {
+                        System.out.print("Novo Titulo: ");
+                        String novoTitulo = sc.nextLine();
+                        System.out.print("Novo Ano de Inicio: ");
+                        int novoAnoIni = Integer.parseInt(sc.nextLine());
+                        System.out.print("Novo Ano de Fim: ");
+                        int novoAnoFim = Integer.parseInt(sc.nextLine());
+                        System.out.print("Novo Autor: ");
+                        String novoAutor = sc.nextLine();
+                        System.out.print("Novo Genero: ");
+                        String novoGenero = sc.nextLine();
+                        System.out.print("Nova Revista: ");
+                        String novaRevista = sc.nextLine();
+                        System.out.print("Nova Editora: ");
+                        String novaEditora = sc.nextLine();
+                        System.out.print("Novo Ano da Edicao: ");
+                        int novoAnoEdi = Integer.parseInt(sc.nextLine());
+                        System.out.print("Nova Quantidade de Volumes Adquiridos: ");
+                        int novaQuantVolAdq = Integer.parseInt(sc.nextLine());
+
+                        mangaCRUD.alterarMangas(isbnAtualizar, novoTitulo, novoAnoIni, novoAnoFim, novoAutor, novoGenero, novaRevista, novaEditora, novoAnoEdi, novaQuantVolAdq);
+                    }else {
+                        System.out.println("Manga com ISBN " + isbnAtualizar + " não encontrado.");
+                    }
                     break;
 
                 case "4":
