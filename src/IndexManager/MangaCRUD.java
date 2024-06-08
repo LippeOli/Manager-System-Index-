@@ -61,7 +61,7 @@ public class MangaCRUD {
              BufferedWriter indexSecWriter = new BufferedWriter(new FileWriter(INDEX_SECUNDARIO, true))) {
 
             long offset = new File(FILE_NAME).length();
-            int RRN = (int) (offset / 100); // Supondo que cada linha tem até 100 caracteres
+            long RRN = isbn * offset;
 
             writer.write(manga.toString());
             writer.newLine();
@@ -75,17 +75,59 @@ public class MangaCRUD {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        atualizarIndices();
+        System.out.println("Manga adicionado com sucesso!");
+    }
+
+    private void atualizarIndices() {
+        List<String> indexPrimario = new ArrayList<>();
+        List<String> indexSecundario = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String linha;
+            long offset = 0;
+            while ((linha = reader.readLine()) != null) {
+                Manga manga = Manga.fromString(linha);
+                int RRN = (int) (offset / 100); // Supondo que cada linha tem até 100 caracteres
+                indexPrimario.add(manga.getIsbn() + "," + RRN);
+                indexSecundario.add(manga.getTitulo() + "," + manga.getIsbn());
+                offset += 100; // Incrementa o offset para a próxima linha
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        indexPrimario.sort(String::compareTo);
+        indexSecundario.sort(String::compareTo);
+
+        try (BufferedWriter indexPrimWriter = new BufferedWriter(new FileWriter(INDEX_PRIMARIO));
+             BufferedWriter indexSecWriter = new BufferedWriter(new FileWriter(INDEX_SECUNDARIO))) {
+            for (String linha : indexPrimario) {
+                indexPrimWriter.write(linha);
+                indexPrimWriter.newLine();
+            }
+            for (String linha : indexSecundario) {
+                indexSecWriter.write(linha);
+                indexSecWriter.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Manga buscarPorTitulo(String titulo) {
         try (BufferedReader indexReader = new BufferedReader(new FileReader(INDEX_SECUNDARIO))) {
+            List<String> indices = new ArrayList<>();
             String linha;
             while ((linha = indexReader.readLine()) != null) {
-                String[] parts = linha.split(",");
-                if (parts[0].equalsIgnoreCase(titulo)) {
-                    int isbn = Integer.parseInt(parts[1]);
-                    return buscarPorISBN(isbn);
-                }
+                indices.add(linha);
+            }
+
+            int index = buscaBinariaSecundario(indices, titulo);
+            if (index >= 0) {
+                String[] parts = indices.get(index).split(",");
+                int isbn = Integer.parseInt(parts[1]);
+                return buscarPorISBN(isbn);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -93,15 +135,38 @@ public class MangaCRUD {
         return null;
     }
 
+    private int buscaBinariaSecundario(List<String> indices, String titulo) {
+        int esquerda = 0;
+        int direita = indices.size() - 1;
+
+        while (esquerda <= direita) {
+            int meio = (esquerda + direita) / 2;
+            String[] parts = indices.get(meio).split(",");
+            int comparacao = parts[0].compareToIgnoreCase(titulo);
+
+            if (comparacao == 0) {
+                return meio;
+            } else if (comparacao < 0) {
+                esquerda = meio + 1;
+            } else {
+                direita = meio - 1;
+            }
+        }
+        return -1;
+    }
     public Manga buscarPorISBN(int isbn) {
         try (BufferedReader indexReader = new BufferedReader(new FileReader(INDEX_PRIMARIO))) {
+            List<String> indices = new ArrayList<>();
             String linha;
             while ((linha = indexReader.readLine()) != null) {
-                String[] parts = linha.split(",");
-                if (Integer.parseInt(parts[0]) == isbn) {
-                    int RRN = Integer.parseInt(parts[1]);
-                    return buscarPorRRN(RRN);
-                }
+                indices.add(linha);
+            }
+
+            int index = buscaBinariaPrimario(indices, isbn);
+            if (index >= 0) {
+                String[] parts = indices.get(index).split(",");
+                long RRN = Integer.parseInt(parts[1]);
+                return buscarPorRRN(RRN);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -109,7 +174,28 @@ public class MangaCRUD {
         return null;
     }
 
-    private Manga buscarPorRRN(int RRN) {
+    private int buscaBinariaPrimario(List<String> indices, int isbn) {
+        int esquerda = 0;
+        int direita = indices.size() - 1;
+
+        while (esquerda <= direita) {
+            int meio = (esquerda + direita) / 2;
+            String[] parts = indices.get(meio).split(",");
+            int isbnAtual = Integer.parseInt(parts[0]);
+
+            if (isbnAtual == isbn) {
+                return meio;
+            } else if (isbnAtual < isbn) {
+                esquerda = meio + 1;
+            } else {
+                direita = meio - 1;
+            }
+        }
+        return -1;
+    }
+
+
+    private Manga buscarPorRRN(long RRN) {
         try (RandomAccessFile raf = new RandomAccessFile(FILE_NAME, "r")) {
             raf.seek(RRN * 100); // Supondo que cada linha tem até 100 caracteres
             String linha = raf.readLine();
@@ -159,7 +245,7 @@ public class MangaCRUD {
                 raf.seek(offset);
                 raf.writeBytes(mangaStr);
 
-                int RRN = (int) (offset / manga.toString().length());
+                long RRN = manga.getIsbn() * new File(FILE_NAME).length();
                 indexPrimWriter.write(manga.getIsbn() + "," + RRN);
                 indexPrimWriter.newLine();
 
@@ -174,9 +260,11 @@ public class MangaCRUD {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("Mangá alterado com sucesso!");
     }
 
     public void excluirManga(int isbn) {
+        // Lê todos os registros, exceto o que deve ser excluído
         List<Manga> mangas = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
             String linha;
@@ -190,30 +278,50 @@ public class MangaCRUD {
             e.printStackTrace();
         }
 
-        try (RandomAccessFile raf = new RandomAccessFile(FILE_NAME, "rw");
+        // Chama a função para compactar o arquivo e atualizar os índices
+        compactarArquivo(mangas);
+    }
+
+
+    private void compactarArquivo(List<Manga> mangas) {
+        // Escreve os registros não excluídos em um arquivo temporário
+        File arquivoTemporario = new File(FILE_NAME + ".tmp");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(arquivoTemporario));
              BufferedWriter indexPrimWriter = new BufferedWriter(new FileWriter(INDEX_PRIMARIO));
              BufferedWriter indexSecWriter = new BufferedWriter(new FileWriter(INDEX_SECUNDARIO))) {
 
             long offset = 0;
             for (Manga manga : mangas) {
-                String mangaStr = manga.toString() + System.lineSeparator();
-                raf.seek(offset);
-                raf.writeBytes(mangaStr);
+                String mangaStr = manga.toString();
+                writer.write(mangaStr);
+                writer.newLine();
 
-                int RRN = (int) (offset / manga.toString().length());
+                long RRN = offset;
                 indexPrimWriter.write(manga.getIsbn() + "," + RRN);
                 indexPrimWriter.newLine();
 
                 indexSecWriter.write(manga.getTitulo() + "," + manga.getIsbn());
                 indexSecWriter.newLine();
 
-                offset = raf.getFilePointer();
-            }
+                offset += mangaStr.length() + System.lineSeparator().length();
 
-            raf.setLength(offset);
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // Substitui o arquivo original pelo arquivo temporário
+        File arquivoOriginal = new File(FILE_NAME);
+        if (arquivoOriginal.delete()) {
+            if (arquivoTemporario.renameTo(arquivoOriginal)) {
+                System.out.println("Arquivo compactado com sucesso!"); // Sucesso na compactação do arquivo
+            } else {
+                System.out.println("Falha ao renomear o arquivo temporário.");
+            }
+        } else {
+            System.out.println("Falha ao excluir o arquivo original.");
+        }
     }
+
 }
