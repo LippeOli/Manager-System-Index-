@@ -1,5 +1,6 @@
 package IndexManager;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -37,11 +38,15 @@ public class Main {
                     int anoEdi = lerInteiro(sc, "Escreva o Ano da Edicao: ");
                     int quantVolAdq = lerInteiro(sc, "Escreva a Quantidade de Volumes Adquiridos: ");
 
-                    mangaCRUD.addManga(isbn, titulo, anoIni, anoFim, autor, genero, revista, editora, anoEdi, quantVolAdq);
+                    Manga novoManga = new Manga(isbn, titulo, anoIni, anoFim, autor, genero, revista, editora, anoEdi, quantVolAdq);
+                    mangaCRUD.adicionarManga(novoManga);
                     break;
 
                 case "2":
-                    mangaCRUD.listarMangas();
+                    List<Manga> listaMangas = mangaCRUD.listarMangas();
+                    for (Manga manga : listaMangas) {
+                        System.out.println(manga);
+                    }
                     break;
 
                 case "3":
@@ -64,14 +69,15 @@ public class Main {
                         int novoAnoEdi = lerInteiro(sc, "Novo Ano da Edicao: ");
                         int novaQuantVolAdq = lerInteiro(sc, "Nova Quantidade de Volumes Adquiridos: ");
 
-                        mangaCRUD.alterarMangas(isbnAtualizar, novoTitulo, novoAnoIni, novoAnoFim, novoAutor, novoGenero, novaRevista, novaEditora, novoAnoEdi, novaQuantVolAdq);
+                        Manga mangaAtualizado = new Manga(isbnAtualizar, novoTitulo, novoAnoIni, novoAnoFim, novoAutor, novoGenero, novaRevista, novaEditora, novoAnoEdi, novaQuantVolAdq);
+                        mangaCRUD.alterarManga(isbnAtualizar, mangaAtualizado);
                     } else {
                         System.out.println("Manga com ISBN " + isbnAtualizar + " não encontrado.");
                     }
                     break;
 
                 case "4":
-                    int idExcluir = lerInteiro(sc, "ID do Manga a ser excluído: ");
+                    int idExcluir = lerInteiro(sc, "ISBN do Manga a ser excluído: ");
                     System.out.print("Tem certeza que deseja excluir esse manga? (Y/N): ");
                     String result = sc.nextLine();
                     if (result.equalsIgnoreCase("Y")) {
@@ -86,7 +92,7 @@ public class Main {
                     if (manga != null) {
                         System.out.println("Manga encontrado: " + manga);
                     } else {
-                        System.out.println("Manga nao encontrado.");
+                        System.out.println("Manga não encontrado.");
                     }
                     break;
 
@@ -120,3 +126,4 @@ public class Main {
         return numero;
     }
 }
+

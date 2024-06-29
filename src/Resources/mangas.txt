@@ -1,4 +1,3 @@
-9780345535528,Attack on Titan,2009,2021,Hajime Isayama,Action,Shonen,Weekly Shonen Magazine,Kodansha,2012,34
-9781974700523,One Punch Man,2012,ongoing,ONE,Comedy,Shonen,Young Jump,Viz Media,2013,21
-9781421599577,My Hero Academia,2014,ongoing,Kohei Horikoshi,Action,Shonen,Weekly Shonen Jump,Shueisha,2015,31
-9781401251454,Death Note,2003,2006,Tsugumi Ohba,Thriller,Shonen,Weekly Shonen Jump,Viz Media,2005,12
+33334,testevideotres,2000,2001,autor,teste,teste,teste,2000,2
+111,titulo,2999,3000,auty,futuro,eree,porer,209991,211
+9292,novo amanha,1999,1999,wesley,soul,miuta,turin,1999,1
